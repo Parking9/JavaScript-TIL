@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        ul > li{
+            list-style: none;
+        }
+        .done{
+            text-decoration: line-through;
+        }
+
+    </style>
+</head>
+<body>
+    <form action="" id='todo-form'>
+        <input type="text">
+        <button>추가</button>
+    </form>
+    <ul></ul>
+    <script>
+        function addTodo(userInput){
+            const todoLi = document.createElement('li')
+            const todoContent = document.createTextNode(userInput)
+                        
+            const todoCheckbox = document.createElement('input')
+            todoCheckbox.type='checkbox'
+            const deleteButton = createButton('삭제')
+            const editButton = createButton('수정')
+
+            deleteButton.addEventListener('click',event => todoLi.remove())
+            todoCheckbox.addEventListener('click',event => {
+                if (todoCheckbox.checked){
+                    todoLi.classList.add('done')
+                }else{
+                    todoLi.classList.remove('done')
+                }
+            })
+
+            editButton.addEventListener('click', event =>{
+                updateTodo(todoContent, todoLi, todoCheckbox, editButton)
+            })
+
+
+        function createButton(buttonName){
+            const button = document.createElement('button')
+            button.innerText=buttonName
+            button.style.marginLeft='10px'
+            return button
+        }
+
+        function updateTodo(todoContent, todoLi, todoCheckbox, editButton){
+            const newInput = document.createElement('input')
+            newInput.value= todoContent.data
+            const editConfirmButton = createButton('확인')
+            
+            todoLi.prepend(todoCheckbox, newInput, editConfirmButton)
+            todoContent.remove()
+            editButton.remove()
+
+            editConfirmButton.addEventListener('click',event => {
+                todoContent.data=newInput.value
+
+                newInput.remove()
+                editConfirmButton.remove()
+
+                todoLi.prepend(todoCheckbox, todoContent, editButton)
+            })
+        }
+
+        todoLi.append(todoCheckbox, todoContent,editButton, deleteButton)
+        todoUl.appendChild(todoLi)
+        }
+
+        // function createDeleteButton(){
+        //     const button = document.createElement('button')
+        //     button.innerText='삭제'
+        //     button.style.marginLeft='10px'
+        //     return button
+        // }
+        // function createEditButton(){
+        //     const button = document.createElement('button')
+        //     button.innerText='수정'
+        //     button.style.marginLeft='10px'
+        //     return button
+        // }
+
+        const todoForm=document.querySelector('#todo-form')
+        const todoFormInput=document.querySelector('input')
+        const todoUl = document.querySelector('ul')
+        todoForm.addEventListener('submit',function(event){
+            event.preventDefault()
+            addTodo(todoFormInput.value)
+            todoFormInput.value=''
+        })
+    </script>
+</body>
+</html>
