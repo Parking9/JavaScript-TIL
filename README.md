@@ -40,7 +40,7 @@
 
 
 
-​	전역변수를 반드시 사용해야 할 이유를 찾지 못한다면 지역변수를 사용해야한다. **변수의 스코프는 좁을수록 		좋다,**
+​	전역변수를 반드시 사용해야 할 이유를 찾지 못한다면 지역변수를 사용해야한다. **변수의 스코프는 좁을수록 좋다,**
 
 ​	그 이유는 1) 모든 코드가 전역변수를 참조하고 변경할 수 있는 암묵적 결합을 허용한다. 2) 전역 변수는 생명 주	기가 길다. 3) 스코프 체인 상에서 종점에 존재한다. ( 전역 변수의 검색속도가 가장 느리다.) 4) 파일이 분리되어	있다 해도 전역 스코프를 공유한다.
 
@@ -367,8 +367,273 @@ JS엔진은 인터프리터를 실행하기 전 소스코드의 평가 과정을
     
     - 전역 코드 실행 종료
     
-      
-    
-  - 
 
 
+
+## 1217
+
+<b> 일급</b>
+
+- 값으로 다룰 수 있다.
+- 변수에 담을 수 있다.
+- 함수의 인자로 사용될 수 있다.
+- 함수의 결과로 사용될 수 있다.
+
+
+
+<b> 일급함수</b>
+
+- 함수를 값으로 다룰 수 있다.
+- 조합성과 추상화의 도구
+
+```javascript
+const add5 = a => a+5  #변수에 함수를 값으로 담을 수 있다.
+log(add5) a => a+5
+log(add5(10)) 15  #결과를 다른 함수에 전달
+
+const f1 = () => () => 1 
+log(f1()) () => 1 #함수를 인자로 담을 수 있다.
+
+const f2 = f1()
+log(f2) () => 1
+log(f2()) 1 
+```
+
+
+
+<b>고차함수</b>
+
+일급함수라는 특징을 사용하여 함수를 값으로 받아서 사용하는 함수
+
+- 함수를 인자로 받아서 실행하는 함수
+
+  ```javascript
+  const apply1 = f => f(1);
+  const add2 = a => a+2 
+  log(apply1(add2)) 3
+  ```
+
+  ```javascript
+  const times = (f,n) => {
+      let i = -1
+      while(++i < n) f(i)
+  };
+  
+  times(log,3) 0 1 2
+  times(a=> log(a+10), 3) 10 11 12
+  # 함수를 인자로 받아서 원하는 인자를 받아서 함수를 실행
+  ```
+
+
+
+- 함수를 만들어서 리턴하는 함수(클로저를 만들어서 리턴하는 함수)
+
+  ```javascript
+  const addMaker = a => b => a+b; #클로저를 리턴하는 함수
+  const add10 = addMaker(10);
+  log(add10); b=> a+b
+  log(add10(5)); 15
+  log(add10(10)); 20
+  ```
+
+  
+
+<b>리스트 순회</b>
+
+```javascript
+const list = [1,2,3];
+for (const a of list){
+    log(a);
+}
+1 2 3
+
+const str = 'abc';
+for (const a of str){
+    log(a);
+}
+a b c
+```
+
+
+
+## 1218
+
+<b>이터러블/이터레이터 프로토콜</b>
+
+- 이터러블 : 이터레이터를 리턴하는 `[Symbol.iterator]()`를 가진 값
+- 이터레이터 : {value, done} 객체를 리턴하는 next()를 가진 값
+- 이터러블/이터레이터 프로토콜 : 이터러블을 for... of, 전개 연산자 등과 함께 동작하도록한 규약
+
+ 
+
+```javascript
+# Array
+const arr = [1,2,3];
+let iter = arr[Symbol.iterator]();
+for (const a of iter) log(a) # arr는 이터레이터를 순회하면서 안쪽에 value를 출력해줌
+
+
+# Set
+const set = new Set([1,2,3]);
+for (const a of set) log(a); #
+
+
+# Map
+const map = new Map(['a',1], ['b',2], ['c',3]);
+for (const a of map ) log(a); 
+
+# map.keys() key를 가진 iterator 반환
+# map.values() value를 가진 iterator 반환
+# map.entries() key,value를 가진 iterator 반환
+
+
+```
+
+
+
+이터레이터의 Symbol.iterator가 자기 자신일 경우에 well formed iterable, iterator라 할 수 있다.
+
+iterator 또한 iterable로 만들어야 한다.
+
+```javascript
+const arr = [1,2,3];
+let iter2 = arr[Symbol.iterator]();
+
+log(iter2[Symbol.iterator]() == iter2) #true;
+```
+
+
+
+사용자 정의 iterable
+
+```javascript
+const iterable = {
+	[Symbol.iterator]() {
+        let i = 3;
+        return {
+            next() {
+                return i==0 ? {done : true} : {value : i--, done : false};
+            },
+            [Symbol.iterator]() {return this;}
+        }
+    }
+}
+```
+
+
+
+<b>전개 연산자</b>
+
+전개 연산자 또한 이터러블/이터레이터 포로토콜을 따른다.
+
+```javascript
+const a = [1,2,3]
+log([...a, ...[3,4,5]]) #[1,2,3,3,4,5]
+
+const b=[1,2,3]
+b[Symbol.iterator] = null
+log([...b, [3,4,5]]) #TypeError : b is not iterable
+```
+
+
+
+<b>제너레이터/이터레이터</b>
+
+- 제너레이터 : 이터레이터이자 이터러블을 리턴하는 함수
+
+```javascript
+function *gen(){
+    yield 1;
+    yield 2;
+    yield 3;
+    return 100; # 마지막 done : true일때 나오는 값
+}
+
+let iter = gen()
+log(iter[Symbol.iterator]); # f [Symbol.iterator]() well-formed iterator를 리턴하는 함수이다. 
+log(iter[Symbol.iterator]() === iter ) # true
+log(iter.next()) # {value : 1, done : false}
+log(iter.next()) # {value : 2, done : false}
+log(iter.next()) # {value : 3, done : false}
+log(iter.next()) # {value : 100, done : true}
+
+for (const a of gen()) log(a) # 1 2 3 (return은 나오지 않음)
+
+제너레이터는 순회할 값을 문장으로 표현함.
+JS에서는 어떠한 값이든 제너레이터면 순회할 수 있다.
+
+function *gen(){
+    yield 1;
+    if (false) yield 2;
+    yield 3;
+    return 100; # 마지막 done : true일때 나오는 값
+}
+for (const a of gen()) log(a) # 1 3
+
+어떠한 값도 순회할 수 있는 형태로 만들 수 있다. 
+```
+
+
+
+<b>제너레이터를 활용해 odd만 담고있는 iterator 생성 </b>
+
+```javascript
+function *odds(n) {
+    for (let i = 0; i < n; i++){
+        if (i%2) yi eld i;
+    }
+}
+let iter = odds(10)
+
+# 최대 10인 홀수만 뽑는 iterator 생성됨.
+```
+
+``` javascript
+# 제너레이터를 활용해
+
+# 무한히 증가하는 iterator 생성
+function *infinity(i=0){
+    while(true) yield i++
+}
+
+# 매개변수로 주어진 iterator를 순회하며 주어진 n까지만 순회하는 iterator 생성
+function *limit(n, iter){
+    for (const a of iter ){
+        yield a;
+        if (a ===n ) return
+    }
+}
+
+# 1부터 n 무한히 증가하는 iterator에서 홀수만 갖는 iterator 생성
+function *odds(n){
+    for (const a of limit(n, infinity(1))){
+        if (a%2) yield a;
+	}
+}
+
+let iter = odds(40)
+for(const a of iter) log(a) #  1 3 5 7 ...  35 37 39
+```
+
+
+
+제너레이터는 `for of`, `전개 연산자`, `구조 분해`, `나머지 연산자` 등 이터러블/이터레이터 프로토콜을 따르는 라이브러리나, 함수들과 함께 사용될 수 있다.
+
+```javascript
+# 전개 연산자
+log(...odds(10)) # 1 3 5 7 9
+log([...odds(10), ...odds(20)]) # 1 3 5 7 9 1 3 .. 19
+
+# 구조 분해
+const [head, ...tail] = odds(5)
+log(head) # 1
+log(tail) # [3, 5]
+
+# 나머지 연산자
+const [a, b, ...rest] = odds(10)
+log(a) # 1
+log(b) # 3
+log(rest) #[5,7,9]
+```
+
+제너레이터와 이터레이터를 잘 활용해하여 조합성이 높은 프로그래밍이 가능하다. 
