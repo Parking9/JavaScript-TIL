@@ -458,11 +458,10 @@ a b c
 
 ## 1218
 
-<b>이터러블/이터레이터 프로토콜</b>
-
-- 이터러블 : 이터레이터를 리턴하는 `[Symbol.iterator]()`를 가진 값
-- 이터레이터 : {value, done} 객체를 리턴하는 next()를 가진 값
-- 이터러블/이터레이터 프로토콜 : 이터러블을 for... of, 전개 연산자 등과 함께 동작하도록한 규약
+- <b>이터러블/이터레이터 프로토콜</b>
+  - 이터러블 : 이터레이터를 리턴하는 `[Symbol.iterator]()`를 가진 값
+  - 이터레이터 : {value, done} 객체를 리턴하는 next()를 가진 값
+  - 이터러블/이터레이터 프로토콜 : 이터러블을 for... of, 전개 연산자 등과 함께 동작하도록한 규약
 
  
 
@@ -522,7 +521,7 @@ const iterable = {
 
 
 
-<b>전개 연산자</b>
+- <b>전개 연산자</b>
 
 전개 연산자 또한 이터러블/이터레이터 포로토콜을 따른다.
 
@@ -537,9 +536,9 @@ log([...b, [3,4,5]]) #TypeError : b is not iterable
 
 
 
-<b>제너레이터/이터레이터</b>
+- <b>제너레이터/이터레이터</b>
 
-- 제너레이터 : 이터레이터이자 이터러블을 리턴하는 함수
+>  제너레이터 : 이터레이터이자 이터러블을 리턴하는 함수
 
 ```javascript
 function *gen(){
@@ -580,7 +579,7 @@ for (const a of gen()) log(a) # 1 3
 ```javascript
 function *odds(n) {
     for (let i = 0; i < n; i++){
-        if (i%2) yi eld i;
+        if (i%2) yield i;
     }
 }
 let iter = odds(10)
@@ -637,3 +636,270 @@ log(rest) #[5,7,9]
 ```
 
 제너레이터와 이터레이터를 잘 활용해하여 조합성이 높은 프로그래밍이 가능하다. 
+
+
+
+## 1221
+
+- <b>map</b>
+
+> 이터러블 프로토콜을 따르는 map의 다형성
+
+```javascript
+const products =[
+    {name : '사과', price : 100},
+    {name : '바나나', price : 200},
+    {name : '포도', price : 300}
+]
+
+
+let names = [];
+for ( const p of products){
+    names.push(p.name)
+}
+log(names) # ['사과','바나나','포도']
+
+# 어떠한 iterable도 받을 수 있는 변수와, 어떤 값을 수집할 것인지 함수를 통해 받음(보조함수).
+const map = (f,iter)=>{
+    let res =[]
+    for (const i of iter){
+		res.push(f(i));        
+    }
+    return res;
+}
+console.log(map(p=>p.name, products)) # ['사과','바나나','포도']
+
+```
+
+```javascript
+log(document.querySelectorAll('*').map(el => el.nodeName)) #undefined
+document.querySelectorAll('*')는 NodeList이지 array가 아니기 때문에
+
+document.querySelectorAll('*')[Symbol.iterator]() # array iterator
+
+# 이터러블 프로토콜을 따르는 모든 iterable인 모든 값, 제너레이터 등 모두 map을 할 수 있다.
+# ex-1
+function *gen(){
+    yield 2;
+    if(false) yield 3;
+    yield 4;
+}
+log(map(a=>a*a, gen())) [4, 16]
+
+#ex-2
+let m = new Map()
+m.set('a',10)
+m.set('b',20)
+log(map(([key,value])=>[key,2*value]),m); #[['a',20],['b',40]]
+
+```
+
+<b>이터러블 프토토콜을 따르는 함수들을 사용하는것은 많은 다른 헬퍼 함수들과의 조합이 좋아진다.</b> 
+
+
+
+- <b>filter</b>
+
+> 특정 조건으로 iterable한 객체를 필터링함.
+
+```javascript
+const products =[
+    {name : '사과', price : 100},
+    {name : '바나나', price : 200},
+    {name : '포도', price : 300}
+]
+
+let under200 = []
+for ( const p of products){
+    if(p.price < 200) under200.push(p)
+}
+console.log(under200) #{name : '사과', price : 100}
+
+
+const filter = (f, iter) => {
+    let res = []
+    for (const a of iter ){
+        if (f(a)) res.push
+    }
+    return res
+}
+
+log(filter(p=> p.price < 200, products)) #{name : '사과', price : 100}
+
+
+# filter 역시 이터러블 프로토콜을 따르고 내부 함수와 이터러블 프로토콜을 따르는 객체를 받아줌으로써 다형성을 높이고 재사용성이 좋음
+```
+
+
+
+<b>reduce</b>
+
+> 하나의 축약된 값으로 표현
+
+```javascript
+const products =[
+    {name : '사과', price : 100},
+    {name : '바나나', price : 200},
+    {name : '포도', price : 300}
+]
+
+
+const nums = [1,2,3,4,5];
+
+let total = 0;
+for ( const n of nums ){
+    total+=n
+}
+console.log(total) #15
+
+
+# reduce의 실행 절차는 다음과 같다
+const add = (a, b) => a+b;
+
+console.log(reduce(add,0,[nums])) # 15
+# add(add(add(add(add(0,1),2),3),4),5) 재귀적으로 내부함수를 호출하여 하나의 값으로 리턴
+
+const reduce = (f, acc, iter) =>{
+    for (const i of iter){
+        acc = f(acc,i);
+    }
+    return acc;
+};
+console.log(add,0,nums) #15
+
+# 초기값인 acc가 없으면 iter의 첫번째 인자를 초기값으로 만든다.
+const reduce = (f,acc,iter)=> {
+    if(!iter){
+        iter = acc[Symbol.iterator]();
+        acc = iter.next().value
+    }
+    for (const i of iter){
+        acc = f(acc,a)
+    }
+    return acc
+}
+console.log(add,nums) # 15
+```
+
+
+
+```javascript
+const products =[
+    {name : '사과', price : 100},
+    {name : '바나나', price : 200},
+    {name : '포도', price : 300}
+]
+
+console.log(
+	reduce(
+        (total, product) => total+=product.price,
+        0,
+        products
+    )
+); #600
+
+# 보조함수를 통해 안쪽에 있는 값의 다형성을 지원하고, iterable을 통해 외부의 다형성도 지원하는 함수
+```
+
+
+
+<b>map+filter+reduce</b>
+
+```javascript
+const products =[
+    {name : '사과', price : 100},
+    {name : '바나나', price : 200},
+    {name : '포도', price : 300},
+    {name : '파인애플', price : 400},
+    {name : '체리', price : 500},
+]
+
+# 특정 가격 미만의 상품의 가격만 출력
+console.log(map(a => a.price, filter(p => p.price < 300, products)));
+# [100,200]
+
+# 특정 가격 미만의 상품들의 가격의 합
+console.log(
+    reduce(
+        add,
+        map(a => a.price,								 
+            filter(p => p.price < 300, products))	
+    )
+);
+# 300
+
+# ***** 코드가 평가될때, 각 매개변수에 알맞은 형태의 데이터로 평가되도록 기대하고 함수들을 사용하여, 코드를 작성해야한다.*****
+# 함수형 프로그래밍에서는 이런식으로 사고를 하며 코드를 작성해나간다.
+```
+
+
+
+<b>함수형 프로그래밍은 `코드를 값으로 다루는 아이디어`를 많이 사용한다. 코드를 값으로 다루기에 어떤 함수가 코드인 함수를 받아서 평가하는 시점을 원하는대로 다룰 수 있다. 이로 코드의 표현력을 높일 수 있다. </b>
+
+
+
+- <b>go</b>
+
+```javascript
+console.log(
+    reduce(
+        add,
+        map(a => a.price,								 
+            filter(p => p.price < 300, products))	
+    )
+);
+# 이러한 코드를 좀 더 단순하게 표현하기 위해 go라는 함수를 만든다.
+
+go(
+    0,
+    a=> a+1,
+    a => a+10,
+    a => a+100,
+    console.log
+)
+# 이렇게 연속적으로 함수를 받는 go 함수를 만든다. 인자들을 받아 하나의 값으로 축약 (=reduce)
+
+const go  = (..args) => reduce((a,f)=> f(a), args)
+# 111
+
+
+# 이러한 go 함수를 통해 위의 코드를 아래와 같이 읽기 좋게 표현할 수 있다.
+go(
+    products,
+    products => filter(p=> p.price < 300, products),
+    products => map(p=> p.price, products),
+    prices => reduce(add, prices),
+    console.log
+)
+#300
+```
+
+
+
+- <b>pipe</b>
+
+> go와 달리 함수를 리턴하는 함수. 함수들이 나열되어있는 합성된 함수를 만들어내는 함수
+
+```javascript
+const f = pipe(
+    a => a+1,
+    a => a+10,
+    a => a+100,
+);
+
+const pipe = (...fs) => (a) => go(a, ...fs);
+
+console.log(f(0)); # 111
+
+
+
+const f = pipe(
+    (a,b) => a+b,
+    a => a+10,
+    a => a+100,
+);
+
+const pipe = (f, ...fs) => (...as) => go(f(...as), ...fs)
+console.log(f(0,1)); # 111
+```
+
