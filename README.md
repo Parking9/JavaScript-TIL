@@ -1,6 +1,6 @@
 # JavaScript TIL
 
-> 기본적으로 **[모던 자바스크립트 Deep Dive](http://www.kyobobook.co.kr/product/detailViewKor.laf?mallGb=KOR&ejkGb=KOR&linkClass=331405&barcode=9791158392239)**책을 기반으로 학습하며, 유튜브와 구글링을 통해 자료를 추가하였다.
+> 기본적으로 **[모던 자바스크립트 Deep Dive](http://www.kyobobook.co.kr/product/detailViewKor.laf?mallGb=KOR&ejkGb=KOR&linkClass=331405&barcode=9791158392239)**책과 함수형 프로그래밍과 JavaScript ES6+ 강의를 중심으로 학습하며, 유튜브와 구글링을 통해 자료를 추가하였다.
 
 
 
@@ -902,4 +902,107 @@ const f = pipe(
 const pipe = (f, ...fs) => (...as) => go(f(...as), ...fs)
 console.log(f(0,1)); # 111
 ```
+
+
+
+<b>curry</b>
+
+> 코드를 값으로 다루면서 받아둔 함수를 원하는 때에 평가되도록 하는 함수.
+
+```javascript
+const curry = f => (a, ..._) => _.length ? f(a, ..._) : (..._) => f(a, ..._);
+# 받아온 인자가 2개 이상이면 받아온 함수를 즉시 실행하고, 인자가 2개 보다 작으면 함수를 다시 리턴하고 그 이후에 받은 인자로 함수를 실행하는 함수. 표현이 어렵지만 코드를 읽으면 괜찮다.
+
+
+# ex_1
+const mult = curry((a,b) => a*b);
+console.log(mult(1)(2)) # 2 (1*2)
+
+const mult3 = mult(3)
+
+console.log(mult3(3)) # 9 (3*3)
+console.log(mult3(5)) # 15 (3*5)
+console.log(mult3(10)) # 30 (3*10)
+
+# 이러한 curry함수를 통해 앞서 만든 함수를 간단하게 할 수 있다.
+go(
+    products,
+    products => filter(p=> p.price < 300, products),
+    products => map(p=> p.price, products),
+    prices => reduce(add, prices),
+    console.log
+)
+
+go(
+    products,
+    curry(filter(p=> p.price < 300),
+    curry(map(p=> p.price),
+    curry(reduce(add),
+    console.log
+)
+
+```
+
+
+
+- <b>함수의 조합으로 함수 만들기</b> 
+
+```javascript
+go(
+    products,
+    curry(filter(p=> p.price < 300),
+    curry(map(p=> p.price),
+    curry(reduce(add),
+    console.log
+);
+# 위 두 함수에 중복되는 코드를 함수의 조합을 통해 간단하게 만드려고 한다.
+go(
+    products,
+    curry(filter(p=> p.price >= 300),
+    curry(map(p=> p.price),
+    curry(reduce(add),
+    console.log
+);
+
+# 중복되는 함수를 하나의 함수로 조합한다.
+const total_price = pipe(
+	map(p=>p.price),
+	reduce(add)
+)
+
+
+go (
+	products,
+	filter(p=>p.price<300)
+	total_price,
+	console.log
+)
+
+go (
+	products,
+	filter(p=>p.price>=300)
+	total_price,
+	console.log
+)
+
+# 또한 인자만 따로 받아서 하나의 함수로 만들 수 있다.
+const base_total_price = predi => pipe(
+	filter(predi),
+	total_price
+)
+
+go(
+	products,
+	base_total_price(p=>p,price < 300),
+	console.log
+)
+go(
+	products,
+	base_total_price(p=>p,price >= 300),
+	console.log
+)
+
+```
+
+
 
