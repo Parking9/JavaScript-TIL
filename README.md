@@ -174,7 +174,7 @@
 
 
 
-### 변수(Variavle)
+### 변수(Variable)
 
 >하나의 값을 저장하기 위해 확보한 메모리 공간 자체  또는 그 메모리 공간을 식별하기 위해 붙인 이름을 말한다. 
 >
@@ -774,7 +774,7 @@ const reduce = (f,acc,iter)=> {
         acc = iter.next().value
     }
     for (const i of iter){
-        acc = f(acc,a)
+        acc = f(acc,i)
     }
     return acc
 }
