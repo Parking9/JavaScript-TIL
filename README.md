@@ -1006,3 +1006,149 @@ go(
 
 
 
+## 1224
+
+- map, reduce, go, pipe, curry 등의 함수를 활용하여 원하는 데이터 출력
+
+```javascript
+const log = console.log;
+const products = [
+    {name: '반팔티', price: 15000, quantity: 1, is_selected: true},
+    {name: '긴팔티', price: 20000, quantity: 2, is_selected: false},
+    {name: '핸드폰케이스', price: 15000, quantity: 3, is_selected: true},
+    {name: '후드티', price: 30000, quantity: 4, is_selected: false},
+    {name: '바지', price: 25000, quantity: 5, is_selected: false}
+];
+
+
+const add = (a,b) => a+b ;
+// const total_quant = products => go(products,
+//     map(p => p.quantity),
+//     reduce((a,b) => a+b)
+// );
+const total_quant = pipe(
+    map(p => p.quantity),
+    reduce(add)
+);
+log(total_quant(products)) //15
+
+const total_price = pipe(
+    map(p => p.price*p.quantity),
+    reduce(add)
+)
+log(total_price(products)) //345000
+
+
+// 위 부분의 매개변수를 제외한 중복 구역을 추상화한다.
+const sum = (f, iter) => go(
+    iter,
+    map(f),
+    reduce(add)
+); 
+
+log(sum(p=>p.quantity, products)) //15
+log(sum(p=>p.quantity * p.price, products)) //345000
+
+const total_quant2 = products => 
+sum(p=>p.quantity, products)
+
+console.log(total_quant2(products)) //15
+
+const total_price2 = iter => sum(p=> p.quantity * p.price, iter)
+console.log(total_price2(products)) //345000
+
+
+// currying 사용 (추상화 레벨이 더 높아짐)
+const sum2 = curry((f,iter)=>go(
+    iter,
+    map(f),
+    reduce(add)
+))
+
+console.log(sum2(p=>p.quantity)(products)) //15
+console.log(sum2(p=>p.quantity * p.price)(products)) //345000
+```
+
+
+
+- HTML로 출력하기
+
+```javascript
+<body>
+    <h1>Hi</h1>
+    <div id='cart'></div>
+    <script>
+        document.querySelector('#cart').innerHTML=`
+            <table>
+                <tr>
+                    <th></th>
+                    <th>상품</th>
+                    <th>가격</th>
+                    <th>수량</th>
+                    <th>총 가격</th>
+                </tr>
+                ${go(products, sum2(p=>`
+                        <tr>
+                            <td><input type='checkbox' ${p.is_selected ? 'checked' : ''}></td>
+                            <td>${p.name}</td>
+                            <td>${p.price}</td>
+                            <td>${p.quantity}</td>
+                            <td>${p.price * p.quantity}</td>
+                        </tr>
+                `))}
+                <tr>
+                    <td colspan='2'>합계</td>
+                    <td>${total_quant(filter(p=>p.is_selected,products))}</td>
+                    <td>${total_price(filter(p=>p.is_selected,products))}</td>
+                </tr>
+            </table>
+        `;
+    </script>
+</body
+```
+
+![결과](img/innerHTML.jpg)
+
+
+
+- <b>range와 느긋한 L.range</b>
+
+```javascript
+// 더하기 function
+const add = (a,b) => a+b
+
+// 0 ~ (n-1) array 만드는 함수
+const range = (n) => {
+    const res = []
+    let i = 0
+    while(i<n){
+        res.push(i)
+        i++
+    }
+    return res
+}
+console.log(range(5))
+
+let list = range(5)
+// array의 합
+console.log(reduce(add,list))
+
+// iterator의 합을 구하는 함수
+const L = {}
+L.range = function *(n){
+    let i =0
+    while(i<n){
+        yield i
+        i++
+    }
+}
+
+let list2 = L.range(5)
+console.log(list2)
+console.log(reduce(add,list2))
+```
+
+이 둘의 차이는 전자의 range의 경우  array로 사용되지 않아도(순회하며 호출되지 않아도) 평가가 완료되어 자료형으로 존재하지만, 후자의 L.range의 경우 호출되기 전까지 내부의 어떠한 값도 평가가 되지 않았다는 것이다. 
+
+평가가 되어 array가 만들어져있는 것과(array -> array iterator) 하나씩 생성해나가는 것(iterator)이 차이.  L.range가 조금더 효율적임
+
