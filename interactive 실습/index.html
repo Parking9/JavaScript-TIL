@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script>
+        let x = 0;
+        let y = 0;
+        let mx = 0;
+        let my = 0;
+        const speed = 0.09;
+        let human;
+        let a;
+        let back;
+
+        function loop(){
+            mx += (x-mx)*speed;
+            my += (y-my)*speed;
+            a.innerText = `x:${mx}, y:${my}`
+            human.style.transform = `translate(${-(mx/10)}px, ${-(my/20)}px)`;
+            back.style.transform = `translate(${(mx/30)}px, ${(my/40)}px)`;
+            window.requestAnimationFrame(loop)
+        }
+        window.onload =function(){
+            human = document.getElementById('human')
+            a = document.getElementsByTagName('h1')[0]
+            back = document.getElementById('back')
+            window.addEventListener('mousemove',mouseFunc,false)
+            function mouseFunc(e){
+                x = (e.clientX-window.innerWidth/2);
+                y = (e.clientY-window.innerHeight/2);
+            }
+            loop()
+        }
+    </script>
+    <style>
+        body{
+            position: relative;
+            background-color: black;
+            overflow: hidden;
+        }
+        h1{
+            color: aliceblue;
+        }
+
+        #cursor_item{
+            background-color: red;
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            top: 0;
+            left: 0;
+            margin: -50px 0 0 -50px;
+            /* transition: all 0.3s cubic-bezier(0.420, 0.000, 0.580, 1.000); */
+        }
+        #human{
+            width: 500px;
+            position: absolute;
+            transition: all 900ms ease-out;
+            left: calc(50% - 260px);
+            z-index: 4;
+        }
+        #back{
+            position: absolute;
+            top: 0;
+            transition: all 900ms ease-out;
+            left: calc(50% - 500px);
+            z-index: 3;
+        }
+    </style>
+</head>
+<body>
+    <h1>TITLE</h1>
+    <!-- <div id="cursor_item"></div> -->
+    <img id='human' src="human.png" alt="">
+    <img id='back' src="back.jpg" alt="">
+</body>
+</html>
